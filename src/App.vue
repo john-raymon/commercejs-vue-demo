@@ -1,32 +1,39 @@
 <template>
   <div class="App ph2 pv4">
-    <fragment v-if="!checkout">
+    <div v-if="!checkout">
+      <cart
+        :cart="cart"
+        @remove-item-from-cart="removeProductFromCart"/>
       <div class="products-container mw7 center cf">
         <h2 class="tracked ttu gray">
           All Products
         </h2>
-        <fragment v-if="products.length">
-          <product-item v-for="product of products" :product="product" :key="product.id">
+        <div v-if="products.length">
+          <product-item
+            v-for="product of products"
+            :product="product"
+            :key="product.id"
+            @add-product-to-cart="addProductToCart">
           </product-item>
-        </fragment>
+        </div>
         <p v-else>There no products available right now</p>
       </div>
-    </fragment>
+    </div>
   </div>
 </template>
 
 <script>
 // components
 import ProductItem from './components/ProductItem'
-// vue-fragment
-import { Fragment } from 'vue-fragment'
+import Cart from './components/Cart'
+// application stylesheet
 import './styles/application.scss'
 
 export default {
   name: 'app',
   components: {
-    Fragment,
-    ProductItem
+    ProductItem,
+    Cart
   },
   props: {
     commerce: {
@@ -44,6 +51,8 @@ export default {
         },
         (error) => {
           // handle error properly in real-world
+          /* eslint-disable-next-line */
+          console.log(error)
         }
       );
       window.addEventListener("Commercejs.Cart.Ready", function () {
@@ -54,6 +63,28 @@ export default {
           }
         });
       }.bind(this))
+    }
+  },
+  methods: {
+    // product methods
+    addProductToCart(productId) {
+      this.commerce.Cart.add({
+        id: productId,
+      }, (resp) => {
+        // if successful update Cart
+        if (!resp.error) {
+          this.cart = resp.cart;
+        }
+      });
+    },
+    // cart methods
+    removeProductFromCart(lineItemId) {
+      this.commerce.Cart.remove(lineItemId, (resp) => {
+        // if successful update Cart
+        if (!resp.error) {
+          this.cart = resp.cart
+        }
+      });
     }
   },
   data: function() {

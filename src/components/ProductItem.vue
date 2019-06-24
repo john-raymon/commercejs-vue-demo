@@ -15,7 +15,7 @@
      {{ product.price.formatted_with_code }}
      </span>
     </p>
-    <button class="dim b1 b--mid-gray outline-0 pointer pa2" :disabled="product.is.sold_out" @click="$emit('add-product-to-cart')">
+    <button class="dim b1 b--mid-gray outline-0 pointer pa2" :disabled="product.is.sold_out" @click="$emit('add-product-to-cart', product.id)">
      {{ product.is.sold_out ? 'Sold Out' : 'Add to Cart' }}
     </button>
   </div>

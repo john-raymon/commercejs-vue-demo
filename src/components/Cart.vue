@@ -29,6 +29,7 @@
 </template>
 
 <script>
+
 import LineItem from './LineItem'
 export default {
   name: 'cart',

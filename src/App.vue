@@ -38,6 +38,7 @@
 </template>
 
 <script>
+/* eslint-disable */
 // components
 import ProductItem from './components/ProductItem'
 import Cart from './components/Cart'

@@ -97,7 +97,7 @@
   </div>
 </template>
 <script>
-// eslint-disable no-console
+/* eslint-disable */
 import CheckoutItem from './CheckoutItem'
 export default {
   name: 'Checkout',
@@ -173,7 +173,7 @@ export default {
         }
       })
     },
-    captureOrder(e){
+    captureOrder(){
       // no need to invoke e.preventDefault as Vue modifier '.prevent' has done it for us
       const lineItems = this.checkout.live.line_items.reduce((obj, lineItem) => {
         obj[lineItem.id] = {

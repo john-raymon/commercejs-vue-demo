@@ -1,9 +1,18 @@
 <template>
   <div class="App ph2 pv4">
+    <div v-if="order" class="mw7 center">
+      <h2 class="tracked ttu green">
+        Thank you for shopping!
+      </h2>
+      <h4 class="tracked ttu gray flex justify-between">
+        Your order number is #{{order.id}}
+      </h4>
+    </div>
     <div v-if="!checkout">
       <cart
         :cart="cart"
-        @remove-item-from-cart="removeProductFromCart"/>
+        @remove-item-from-cart="removeProductFromCart"
+        @create-checkout="createCheckout"/>
       <div class="products-container mw7 center cf">
         <h2 class="tracked ttu gray">
           All Products
@@ -19,6 +28,12 @@
         <p v-else>There no products available right now</p>
       </div>
     </div>
+    <checkout
+      v-else
+      :checkout="checkout"
+      :commerce="commerce"
+      @capture-order="captureOrder"
+      @cancel-checkout="cancelCheckout" />
   </div>
 </template>
 
@@ -26,6 +41,7 @@
 // components
 import ProductItem from './components/ProductItem'
 import Cart from './components/Cart'
+import Checkout from './components/Checkout'
 // application stylesheet
 import './styles/application.scss'
 
@@ -33,7 +49,8 @@ export default {
   name: 'app',
   components: {
     ProductItem,
-    Cart
+    Cart,
+    Checkout
   },
   props: {
     commerce: {
@@ -85,6 +102,41 @@ export default {
           this.cart = resp.cart
         }
       });
+    },
+    refreshCart(){
+      this.commerce.Cart.refresh(
+      (resp) => {
+        // successful
+      },
+      error => console.log(error))
+    },
+    // checkout methods
+    createCheckout() {
+      if (this.cart.total_items > 0) {
+        this.commerce.Checkout
+          .generateToken(this.cart.id, { type: 'cart' },
+            (checkout) => {
+              this.checkout = checkout;
+            },
+            function(error) {
+              console.log('Error:', error)
+            })
+      }
+    },
+    cancelCheckout() {
+      this.checkout = null;
+    },
+    captureOrder(checkoutId, order) {
+      console.log(arguments)
+      // upon successful capturing of order, refresh cart, and clear checkout state, then set order state
+      this.commerce.Checkout.capture(checkoutId, order,
+        (resp) => {
+          this.refreshCart()
+          this.checkout = null;
+          this.order = resp;
+        },
+        (error) => console.log(error)
+      )
     }
   },
   data: function() {

@@ -1,4 +1,4 @@
-# commercejs-vue-demo
+# E-commerce Vue.js app powered by Chec's Commerce.js - https://john-raymon.github.io/commercejs-vue-demo/
 
 ## Project setup
 ```

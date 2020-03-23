@@ -27,6 +27,20 @@
         </div>
         <p v-else>There no products available right now</p>
       </div>
+      <div class="products-container products-recommended mw7 center cf">
+        <h2 class="tracked ttu gray">
+          Recommended products
+        </h2>
+        <div v-if="recProducts.length">
+          <product-item
+            v-for="product of recProducts"
+            :product="product"
+            :key="product.id"
+            @add-product-to-cart="addProductToCart">
+          </product-item>
+        </div>
+        <p v-else>There no products available right now</p>
+      </div>
     </div>
     <checkout
       v-else
@@ -46,6 +60,23 @@ import Checkout from './components/Checkout'
 // application stylesheet
 import './styles/application.scss'
 
+const convertArrayToObject = (array, key) => {
+  const initialValue = {};
+  return array.reduce((obj, item) => {
+    return {
+      ...obj,
+      [item[key]]: item,
+    };
+  }, initialValue);
+};
+
+// helper function to get all product Ids from a cart, including duplicates
+const getProductIdsFromCart = (cart) => {
+  return cart.line_items.flatMap(item => {
+    return Array(item.quantity).fill(item.product_id)
+  });
+};
+
 export default {
   name: 'app',
   components: {
@@ -62,10 +93,32 @@ export default {
   created: function() {
     if (this.commerce !== undefined && typeof this.commerce !== 'undefined') {
       // invoke commerce products method to get all products
+      let self = this;
       this.commerce.Products.list(
         (resp) => {
           //Success
-          this.products = resp.data;
+          self.products = resp.data;
+
+          // your current / control behavior
+          function getProductIds() {
+            return ["prod_0egY5eaDj53QnA", "prod_bWZ3l8m81wkpEQ", "prod_DWy4oGD3q56Jx2"];
+          }
+
+          // optionally filter recommendations
+          function filterRecs(productIds) {
+            return productIds;
+          }
+
+          // your own logic to populate your product recommendations given the IDs
+          function insertProductRecs(productIds) {
+            let idToProducts = convertArrayToObject(self.products, 'id');
+            self.recProducts = productIds.map((id) => {
+              return idToProducts[id];
+            });
+          }
+
+          // the actual call to bandit, passing in these callback functions.
+          bandit.getDecision("bandit-provided-exp-id", getProductIds, filterRecs, insertProductRecs);
         },
         (error) => {
           // handle error properly in real-world
@@ -92,9 +145,15 @@ export default {
         // if successful update Cart
         if (!resp.error) {
           this.cart = resp.cart;
+          bandit.updateContextValue(
+            {
+              itemsInCart: getProductIdsFromCart(this.cart)
+            }
+          );
         }
       });
     },
+
     // cart methods
     removeProductFromCart(lineItemId) {
       this.commerce.Cart.remove(lineItemId, (resp) => {
@@ -102,6 +161,11 @@ export default {
         if (!resp.error) {
           this.cart = resp.cart
         }
+        bandit.updateContextValue(
+          {
+            itemsInCart: getProductIdsFromCart(this.cart)
+          }
+        );
       });
     },
     refreshCart(){
@@ -132,7 +196,7 @@ export default {
       // upon successful capturing of order, refresh cart, and clear checkout state, then set order state
       this.commerce.Checkout.capture(checkoutId, order,
         (resp) => {
-          this.refreshCart()
+          this.refreshCart();
           this.checkout = null;
           this.order = resp;
         },
@@ -143,6 +207,7 @@ export default {
   data: function() {
     return {
       products: [],
+      recProducts: [],
       cart: null,
       checkout: null,
       order: null

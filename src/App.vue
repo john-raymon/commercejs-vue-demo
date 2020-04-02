@@ -70,13 +70,6 @@ const convertArrayToObject = (array, key) => {
   }, initialValue);
 };
 
-// helper function to get all product Ids from a cart, including duplicates
-const getProductIdsFromCart = (cart) => {
-  return cart.line_items.flatMap(item => {
-    return Array(item.quantity).fill(item.product_id)
-  });
-};
-
 export default {
   name: 'app',
   components: {
@@ -115,10 +108,17 @@ export default {
             self.recProducts = productIds.map((id) => {
               return idToProducts[id];
             });
+            return productIds;
           }
 
           // the actual call to bandit, passing in these callback functions.
-          bandit.getDecision("bandit-provided-exp-id", getProductIds, filterRecs, insertProductRecs);
+          bandit.updateContext({
+            currentlyViewingProduct: self.products[0].id
+          }, banditExperimentId).then(() => {
+            bandit.getDecision(
+              banditExperimentId, getProductIds, filterRecs, insertProductRecs
+            );
+          })
         },
         (error) => {
           // handle error properly in real-world
@@ -145,11 +145,6 @@ export default {
         // if successful update Cart
         if (!resp.error) {
           this.cart = resp.cart;
-          bandit.updateContextValue(
-            {
-              itemsInCart: getProductIdsFromCart(this.cart)
-            }
-          );
         }
       });
     },
@@ -161,11 +156,6 @@ export default {
         if (!resp.error) {
           this.cart = resp.cart
         }
-        bandit.updateContextValue(
-          {
-            itemsInCart: getProductIdsFromCart(this.cart)
-          }
-        );
       });
     },
     refreshCart(){
